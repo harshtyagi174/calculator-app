@@ -2,26 +2,29 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven 3.9.6'
-        jdk 'JDK 17'
+        maven 'Maven 3'
+        jdk 'JDK 21'
     }
 
     environment {
-        SONARQUBE = 'SonarQube'
-        SCANNER_TOOL = 'SonarScanner'
-        ARTIFACTORY = 'Artifactory'
+        SONAR_SCANNER_HOME = tool 'SonarScanner'
+    }
+
+    options {
+        timeout(time: 10, unit: 'MINUTES')
+        skipStagesAfterUnstable()
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/harshtyagi174/calculator-app.git'
+                git branch: 'main', url: 'https://github.com/harshtyagi174/calculator-app.git'
             }
         }
 
         stage('Build') {
             steps {
-                bat 'mvn clean install -DskipTests'
+                bat 'mvn clean compile'
             }
         }
 
@@ -34,14 +37,18 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    bat "\"%SCANNER_TOOL%\\bin\\sonar-scanner.bat\""
+                    bat "\"%SONAR_SCANNER_HOME%\\bin\\sonar-scanner.bat\" " +
+                        "-Dsonar.projectKey=sample-maven-app " +
+                        "-Dsonar.sources=src " +
+                        "-Dsonar.tests=src\\test " +
+                        "-Dsonar.java.binaries=target\\classes"
                 }
             }
         }
 
         stage('Quality Gate') {
             steps {
-                timeout(time: 2, unit: 'MINUTES') {
+                timeout(time: 1, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
@@ -54,4 +61,5 @@ pipeline {
         }
     }
 }
+
 
