@@ -43,10 +43,10 @@ pipeline {
             
         }
         
-        stage('Qquality Analysis'){
+        stage('Quality Analysis'){
              steps {
                 script {
-                    withSonarQubeEnv(installationName: 'Token_Sonar', credentialsId: 'Sonarqube-token'){
+                    withSonarQubeEnv('Token_Sonar'){
                         bat "mvn sonar:sonar"
                     }
                     
