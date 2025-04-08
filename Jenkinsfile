@@ -40,7 +40,7 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                     bat """
                         ${SONAR_SCANNER_HOME}\\bin\\sonar-scanner.bat ^
-                        -Dsonar.projectKey=sample-maven-app ^
+                        -Dsonar.projectKey=calculator-app^
                         -Dsonar.sources=src ^
                         -Dsonar.tests=src/test ^
                         -Dsonar.java.binaries=target/classes
