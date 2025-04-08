@@ -2,64 +2,80 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven 3'
-        jdk 'JDK 21'
+        // Install the Maven version configured as "M3" and add it to the path.
+        maven "Maven 3"
+        jdk "JDK 21"
     }
-
+    
     environment {
-        SONAR_SCANNER_HOME = tool 'SonarScanner'
+        SCANNER_HOME= tool 'SonarScanner'
     }
-
-    options {
-        timeout(time: 10, unit: 'MINUTES')
-        skipStagesAfterUnstable()
-    }
-
     stages {
-        stage('Checkout') {
+        stage('Git Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/harshtyagi174/calculator-app.git'
-            }
-        }
-
-        stage('Build') {
-            steps {
-                bat 'mvn clean compile'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                bat 'mvn test'
-            }
-        }
-
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarScanner') {
-                    bat "\"%SONAR_SCANNER_HOME%\\bin\\sonar-scanner.bat\" " +
-                        "-Dsonar.projectKey=sample-maven-app " +
-                        "-Dsonar.sources=src " +
-                        "-Dsonar.tests=src\\test " +
-                        "-Dsonar.java.binaries=target\\classes"
+                script {
+                    git url: 'https://github.com/harshtyagi174/calculator-app.git'
+                    
+                }
                 }
             }
-        }
-
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 1, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+        
+        stage('Build'){
+             steps {
+                script {
+                    bat "mvn clean compile"
+                    
+                
                 }
             }
+            
         }
-
-        stage('Upload to Artifactory') {
-            steps {
-                bat 'mvn deploy'
+        
+        
+        stage('Unit tests'){
+             steps {
+                script {
+                    bat "mvn test"
+                    
+                
+                }
             }
+            
         }
+        
+        stage('Qquality Analysis'){
+             steps {
+                script {
+                    withSonarQubeEnv(installationName: 'Token_Sonar', credentialsId: 'Sonarqube-token'){
+                        bat "mvn sonar:sonar"
+                    }
+                    
+                
+                }
+            }
+            
+        }
+        
+        
+        stage('Deploy'){
+             steps {
+                echo "Deploying to prod"
+                    
+                
+                }
+            }
+            
+        
     }
-}
+            post {
+                // If Maven was able to run the tests, even if some of the test
+                // failed, record the test results and archive the jar file.
+                success {
+                    junit '**/target/surefire-reports/TEST-*.xml'
+                    //archiveArtifacts 'target/*.jar'
+                }
+            }
+        }
+
 
 
