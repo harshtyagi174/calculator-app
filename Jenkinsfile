@@ -11,10 +11,15 @@ pipeline {
         SONAR_SCANNER_HOME = tool 'SonarScanner'
     }
 
+    options {
+        timeout(time: 10, unit: 'MINUTES')     // Optional: pipeline fails if it runs too long
+        skipStagesAfterUnstable()              // Optional: stop remaining stages if unstable
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                git url:'https://github.com/harshtyagi174/calculator-app.git'
+                git branch: 'main', url: 'https://github.com/harshtyagi174/calculator-app.git'
             }
         }
 
@@ -33,7 +38,11 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=sample-maven-app -Dsonar.sources=src -Dsonar.tests=src/test -Dsonar.java.binaries=target/classes"
+                    sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner " +
+                       "-Dsonar.projectKey=sample-maven-app " +
+                       "-Dsonar.sources=src " +
+                       "-Dsonar.tests=src/test " +
+                       "-Dsonar.java.binaries=target/classes"
                 }
             }
         }
@@ -53,3 +62,4 @@ pipeline {
         }
     }
 }
+
