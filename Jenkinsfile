@@ -7,7 +7,6 @@ pipeline {
     }
 
     environment {
-        SONAR_HOST_URL = 'http://localhost:9000'
         SONAR_SCANNER_HOME = tool 'SonarScanner'
     }
 
@@ -25,26 +24,24 @@ pipeline {
 
         stage('Build') {
             steps {
-                bat 'mvn clean compile'
+                sh 'mvn clean compile'
             }
         }
 
         stage('Test') {
             steps {
-                bat 'mvn test'
+                sh 'mvn test'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarScanner') {
-                    bat """
-                        ${SONAR_SCANNER_HOME}\\bin\\sonar-scanner.bat ^
-                        -Dsonar.projectKey=calculator-app^
-                        -Dsonar.sources=src ^
-                        -Dsonar.tests=src/test ^
-                        -Dsonar.java.binaries=target/classes
-                    """
+                withSonarQubeEnv('SonarQube') {
+                    sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner " +
+                       "-Dsonar.projectKey=sample-maven-app " +
+                       "-Dsonar.sources=src " +
+                       "-Dsonar.tests=src/test " +
+                       "-Dsonar.java.binaries=target/classes"
                 }
             }
         }
@@ -59,10 +56,8 @@ pipeline {
 
         stage('Upload to Artifactory') {
             steps {
-                bat 'mvn deploy'
+                sh 'mvn deploy'
             }
         }
     }
 }
-
-
