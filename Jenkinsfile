@@ -36,7 +36,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
+                withSonarQubeEnv('SonarScanner') {
                     bat "\"%SONAR_SCANNER_HOME%\\bin\\sonar-scanner.bat\" " +
                         "-Dsonar.projectKey=sample-maven-app " +
                         "-Dsonar.sources=src " +
