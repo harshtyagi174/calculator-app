@@ -2,77 +2,54 @@ pipeline {
     agent any
 
     tools {
-        // Install the Maven version configured as "M3" and add it to the path.
-        maven "Maven 3"
-        jdk "JDK 21"
+        maven 'MAVEN_HOME'
+        jdk 'JAVA_HOME'
     }
-    
+
     environment {
-        SCANNER_HOME= tool 'sonar-scanner'
+        SONAR_HOST_URL = 'http://localhost:9000'
+        SONAR_SCANNER_HOME = tool 'SonarQubeScanner'
     }
+
     stages {
-        stage('Git Checkout') {
+        stage('Checkout') {
             steps {
-                script {
-                    git url: 'https://github.com/harshtyagi174/calculator-app.git'
-                    
-                }
-                }
+                git url:'https://github.com/harshtyagi174/calculator-app.git'
             }
-        
-        stage('Build'){
-             steps {
-                script {
-                    bat "mvn clean compile"
-                    
-                
-                }
-            }
-            
         }
-        
-        
-        stage('Unit tests'){
-             steps {
-                script {
-                    bat "mvn test"
-                    
-                
-                }
+
+        stage('Build') {
+            steps {
+                sh 'mvn clean compile'
             }
-            
         }
-        
-        stage('Qquality Analysis'){
-             steps {
-                script {
-                    withSonarQubeEnv(installationName: 'Sonar', credentialsId: 'Token_Sonar'){
-                        bat "mvn sonar:sonar"
-                    }
-                    
-                
-                }
+
+        stage('Test') {
+            steps {
+                sh 'mvn test'
             }
-            
         }
-        
-        
-        stage('Deploy'){
-             steps {
-                echo "Deploying to prod"
-                    
-                
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=sample-maven-app -Dsonar.sources=src -Dsonar.tests=src/test -Dsonar.java.binaries=target/classes"
                 }
             }
-            
-        
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 1, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Upload to Artifactory') {
+            steps {
+                sh 'mvn deploy'
+            }
+        }
     }
-            post {
-                // If Maven was able to run the tests, even if some of the test
-                // failed, record the test results and archive the jar file.
-                success {
-                    junit '**/target/surefire-reports/TEST-*.xml'
-                    //archiveArtifacts 'target/*.jar'
-                }
-            }
-        }
+}
